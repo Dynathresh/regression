@@ -120,8 +120,7 @@ class PolynomialRegression():
 
         return Phi
 
-    def fit_GD(self, X, y, eta=None,
-               eps=0, tmax=10000, verbose=False):
+    def fit_GD(self, X, y, eta=None, eps=0, tmax=10000, verbose=False):
         """
         Finds the coefficients of a {d-1}^th degree polynomial
         that fits the data using least squares batch gradient descent.
@@ -162,7 +161,7 @@ class PolynomialRegression():
             # change the default eta in the function signature to 'eta=None'
             # and update the line below to your learning rate function
             if eta_input is None:
-                eta = None  # change this line
+                eta = 1/(1.0+t)  # Dynamic step size. Has to be 1.0 r u kidding meee
             else:
                 eta = eta_input
             ### ========== TODO : END ========== ###
@@ -173,10 +172,11 @@ class PolynomialRegression():
 
             # track error
             # hint: you cannot use self.predict(...) to make the predictions
-            s = (np.dot(self.coef_.T, X.T) - y) *
+            s = np.sum((np.dot(self.coef_, X.T) - y) * X[:, 1])  #element wise multiply
+
             u = 2 * eta * s
             self.coef_ = self.coef_ - u
-            y_pred = y  # change this line
+            y_pred = np.dot(self.coef_.T, X.T)  # prediction with new coef_
             err_list[t] = np.sum(np.power(y - y_pred, 2)) / float(n)
             ### ========== TODO : END ========== ###
 
@@ -224,6 +224,8 @@ class PolynomialRegression():
         # part e: implement closed-form solution
         # hint: use np.dot(...) and np.linalg.pinv(...)
         #       be sure to update self.coef_ with your solution
+        self.coef_ = np.dot(np.dot(np.linalg.pinv(np.dot(X.T, X)), X.T),y)
+
 
         ### ========== TODO : END ========== ###
 
@@ -327,8 +329,30 @@ def main():
     model.generate_polynomial_features(train_data.X)
 
     model.coef_ = np.zeros(2)
-    c = model.cost(train_data.X, train_data.y)
-    print(c)
+
+    c_list = [0.01, 0.001, 0.0001, 0.0407]
+    for c in c_list:
+        print('-------------------------------------')
+        print('Step size: {}'.format(c))
+        model.fit_GD(train_data.X, train_data.y, eta=c)
+        print('Weights: {}'.format(model.coef_))
+        cost = model.cost(train_data.X, train_data.y)
+        print('Cost: {}'.format(cost))
+
+    print('-------------------------------------')
+    print('Closed form solution')
+    model.fit(train_data.X, train_data.y)  # Closed form solution
+    print('Weights: {}'.format(model.coef_))
+    cost = model.cost(train_data.X, train_data.y)
+    print('Cost: {}'.format(cost))
+
+    print('-------------------------------------')
+    print('Dynamic step size')
+    model.fit_GD(train_data.X, train_data.y)
+    print('Weights: {}'.format(model.coef_))
+    cost = model.cost(train_data.X, train_data.y)
+    print('Cost: {}'.format(cost))
+
 
     ### ========== TODO : END ========== ###
 
